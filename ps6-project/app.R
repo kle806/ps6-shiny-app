@@ -46,7 +46,7 @@ ui <- fluidPage(
             a("Rotten Tomatoes rating", href= 'https://www.rottentomatoes.com/about#:~:text=When%20at%20least%2060%25%20of,to%20indicate%20its%20Fresh%20status.&text=When%20less%20than%2060%25%20of,to%20indicate%20its%20Rotten%20status.'),
             "given to each movie. Ratings are points from 0 to 100.
         The height of each bin corresponds to how many movies have gotten that rating.
-        The color scale on the bins are another way to depict the ratings. Green corresponds to higher ratings while red are lower ratings."),
+        The color scale on the bins are another way to depict the ratings."),
     
              sidebarLayout(
       
@@ -80,20 +80,27 @@ ui <- fluidPage(
     # Table Panel
     tabPanel("Table",
              titlePanel("Table"),
-             p("This is where plot goes"),
              sidebarLayout(
                
                # Widgets
                sidebarPanel(
                  
+                 # Option explanation
+                 p("Select a service and the table will show the average Rotten
+                   Tomatoes rating across all movies made in that year, in that
+                   service's movie catalog."),
+                 
                  # Select service
-                 selectInput("service", "Streaming service:", streaming_services,
-                                        selected = "Netflix")
+                 selectInput("service2", "Streaming service:", streaming_services,
+                                        selected = "Netflix"),
+                 
+                 # Reactive text
+                 h3(textOutput("selected_service2"))
                ),
                
                # Table
                mainPanel(dataTableOutput("table"))
-               )
+               ),
              )
     )
   )
@@ -143,16 +150,22 @@ server <- function(input, output, session) {
   output$table <- renderDataTable({
     
     # Service input
-    service <- input$service
+    service2 <- input$service2
     
     # Table
     streaming %>% 
       filter(!is.na(modified_ratings)) %>% 
-      filter(!!as.symbol(service) == 1) %>% 
+      filter(!!as.symbol(service2) == 1) %>% 
       group_by(Year) %>% 
       summarise(avg_rating = mean(modified_ratings)) %>% 
       arrange(Year)
   })
+  
+  # Reactive text in table panel
+  output$selected_service2 <- renderText({
+    paste("You have selected the", input$service2, "table.")
+  })
+  
 }
 
 # Load shiny app
