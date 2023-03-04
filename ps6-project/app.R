@@ -70,7 +70,11 @@ ui <- fluidPage(
       # Plot
       mainPanel(plotOutput("distPlot")
         )
-      )
+      ),
+      
+      # Text that changes according to what option is selected
+      h2(textOutput("selected_service"))
+      
       ),
     
     # Table Panel
@@ -81,11 +85,14 @@ ui <- fluidPage(
                
                # Widgets
                sidebarPanel(
-                 p("Widgets")
+                 
+                 # Select service
+                 selectInput("service", "Streaming service:", streaming_services,
+                                        selected = "Netflix")
                ),
                
                # Table
-               mainPanel(p("Table"))
+               mainPanel(dataTableOutput("table"))
                )
              )
     )
@@ -96,6 +103,11 @@ server <- function(input, output, session) {
   
   streaming$modified_ratings <- as.numeric(
     str_remove(streaming$`Rotten Tomatoes`, "/100"))
+  
+  # Reactive text in plot panel
+  output$selected_service <- renderText({
+    paste("You have selected the", input$service, "histogram.")
+  })
   
   # Creating histogram plot
   output$distPlot <- renderPlot({
@@ -125,6 +137,21 @@ server <- function(input, output, session) {
     streaming %>% 
       sample_n(5) %>% 
       select(Title, Age, Year, `Rotten Tomatoes`, Netflix, Hulu, `Prime Video`, `Disney+`)
+  })
+  
+  # Table panel
+  output$table <- renderDataTable({
+    
+    # Service input
+    service <- input$service
+    
+    # Table
+    streaming %>% 
+      filter(!is.na(modified_ratings)) %>% 
+      filter(!!as.symbol(service) == 1) %>% 
+      group_by(Year) %>% 
+      summarise(avg_rating = mean(modified_ratings)) %>% 
+      arrange(Year)
   })
 }
 
